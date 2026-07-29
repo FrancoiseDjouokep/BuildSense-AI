@@ -1,0 +1,18 @@
+[project]
+name = "buildsense-backend"
+version = "0.1.0"
+description = "AI-powered quantity surveying backend"
+requires-python = ">=3.12"
+
+dependencies = [
+    "fastapi",
+    "pydantic-settings>=2.14.2",
+    "uvicorn[standard]",
+]
+
+[dependency-groups]
+dev = [
+    "ruff",
+    "mypy",
+    "pytest",
+]
