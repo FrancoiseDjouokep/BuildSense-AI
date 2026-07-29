@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 
 from app.core.config.settings import settings
+from app.api.router import api_router
 
 
 def create_application() -> FastAPI:
@@ -15,13 +16,6 @@ def create_application() -> FastAPI:
         description="AI-powered quantity surveying platform.",
     )
 
-    @app.get("/", tags=["Health"])
-    async def root():
-        return {
-            "application": settings.app_name,
-            "version": settings.app_version,
-            "environment": settings.app_env,
-            "status": "running",
-        }
+    app.include_router(api_router)
 
     return app
