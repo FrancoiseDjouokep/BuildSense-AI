@@ -1,25 +1,55 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Literal
+
+from pydantic import computed_field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    # =========================================================================
+    # Application
+    # =========================================================================
     app_name: str = "BuildSense AI"
     app_version: str = "0.1.0"
+
     app_env: Literal[
-    "development",
-    "test",
-    "staging",
-    "production",
- ] = "development"
+        "development",
+        "test",
+        "staging",
+        "production",
+    ] = "development"
+
     debug: bool = True
 
     host: str = "0.0.0.0"
     port: int = 8000
 
+    # =========================================================================
+    # Database
+    # =========================================================================
+    database_host: str = "localhost"
+    database_port: int = 5435
+    database_name: str = "buildsense"
+    database_user: str = "postgres"
+    database_password: str = "postgres"
+
+    # =========================================================================
+    # Configuration
+    # =========================================================================
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=False,
+        extra="ignore",
     )
+
+    @computed_field
+    @property
+    def database_url(self) -> str:
+        return (
+            f"postgresql+psycopg://"
+            f"{self.database_user}:{self.database_password}"
+            f"@{self.database_host}:{self.database_port}"
+            f"/{self.database_name}"
+        )
 
 
 settings = Settings()
