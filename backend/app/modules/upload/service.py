@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.modules.project.models import Project
 from app.modules.upload.models import Plan
-from app.modules.upload.schemas import PlanUploadResponse
+from app.modules.upload.schemas import PlanResponse, PlanUploadResponse
 from app.modules.upload.storage import ObjectStorageError, PlanStorage
 
 logger = logging.getLogger(__name__)
@@ -111,6 +111,16 @@ class UploadService:
         return PlanUploadResponse.model_validate(plan).model_copy(
             update={"is_duplicate": is_duplicate}
         )
+
+    def list_plans(self, project_id: UUID) -> list[PlanResponse]:
+        self._get_project(project_id)
+        statement = (
+            select(Plan)
+            .where(Plan.project_id == project_id)
+            .order_by(Plan.created_at.desc())
+        )
+        plans = self.db.scalars(statement).all()
+        return [PlanResponse.model_validate(plan) for plan in plans]
 
     def _get_project(self, project_id: UUID) -> Project:
         project = self.db.get(Project, project_id)
