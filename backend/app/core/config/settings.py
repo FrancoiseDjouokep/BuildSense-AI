@@ -33,6 +33,15 @@ class Settings(BaseSettings):
     database_password: str = "postgres"
 
     # =========================================================================
+    # Object storage (MinIO / S3)
+    # =========================================================================
+    minio_endpoint: str = "localhost:9000"
+    minio_access_key: str = "minioadmin"
+    minio_secret_key: str = "minioadmin"
+    minio_bucket: str = "buildsense-plans"
+    minio_secure: bool = False
+
+    # =========================================================================
     # Configuration
     # =========================================================================
     model_config = SettingsConfigDict(
