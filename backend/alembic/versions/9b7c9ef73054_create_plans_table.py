@@ -1,21 +1,21 @@
-"""create plan table
+"""create plans table
 
-Revision ID: a68f10ef5744
+Revision ID: 9b7c9ef73054
 Revises: 1660ac0e9c1b
-Create Date: 2026-08-04 11:41:33.496391
+Create Date: 2026-08-06 13:43:40.230332
 
 """
-from collections.abc import Sequence
-
-import sqlalchemy as sa
+from typing import Sequence, Union
 
 from alembic import op
+import sqlalchemy as sa
+
 
 # revision identifiers, used by Alembic.
-revision: str = "a68f10ef5744"
-down_revision: str | Sequence[str] | None = "1660ac0e9c1b"
-branch_labels: str | Sequence[str] | None = None
-depends_on: str | Sequence[str] | None = None
+revision: str = '9b7c9ef73054'
+down_revision: Union[str, Sequence[str], None] = '1660ac0e9c1b'
+branch_labels: Union[str, Sequence[str], None] = None
+depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
@@ -29,9 +29,10 @@ def upgrade() -> None:
     sa.Column('mime_type', sa.String(length=100), nullable=False),
     sa.Column('size_bytes', sa.BigInteger(), nullable=False),
     sa.Column('checksum', sa.String(length=64), nullable=False),
-    sa.Column('status', sa.Enum('UPLOADED', 'PROCESSING', 'ANALYSED', 'FAILED', name='plan_status'), nullable=False),
+    sa.Column('status', sa.Enum('uploaded', 'processing', 'analysed', 'failed', 'archived', name='plan_status'), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('archived_at', sa.DateTime(timezone=True), nullable=True),
     sa.ForeignKeyConstraint(['project_id'], ['projects.id'], name=op.f('fk_plans_project_id_projects'), ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_plans')),
     sa.UniqueConstraint('storage_key', name=op.f('uq_plans_storage_key'))

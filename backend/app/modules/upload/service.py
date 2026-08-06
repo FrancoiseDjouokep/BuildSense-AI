@@ -1,6 +1,7 @@
 import hashlib
 import logging
 import re
+from datetime import UTC, datetime
 from tempfile import SpooledTemporaryFile
 from typing import BinaryIO
 from uuid import UUID, uuid4
@@ -10,7 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.modules.project.models import Project
-from app.modules.upload.models import Plan
+from app.modules.upload.models import Plan, PlanStatus
 from app.modules.upload.schemas import PlanResponse, PlanUploadResponse
 from app.modules.upload.storage import ObjectStorageError, PlanStorage
 
@@ -112,21 +113,46 @@ class UploadService:
             update={"is_duplicate": is_duplicate}
         )
 
-    def list_plans(self, project_id: UUID) -> list[PlanResponse]:
+    def list_plans(
+        self, project_id: UUID, *, include_archived: bool = False
+    ) -> list[PlanResponse]:
         self._get_project(project_id)
-        statement = (
-            select(Plan)
-            .where(Plan.project_id == project_id)
-            .order_by(Plan.created_at.desc())
-        )
+        statement = select(Plan).where(Plan.project_id == project_id)
+        if not include_archived:
+            statement = statement.where(Plan.status != PlanStatus.ARCHIVED)
+        statement = statement.order_by(Plan.created_at.desc())
         plans = self.db.scalars(statement).all()
         return [PlanResponse.model_validate(plan) for plan in plans]
+
+    def get_plan(self, project_id: UUID, plan_id: UUID) -> PlanResponse:
+        return PlanResponse.model_validate(self._get_plan(project_id, plan_id))
+
+    def archive_plan(self, project_id: UUID, plan_id: UUID) -> PlanResponse:
+        plan = self._get_plan(project_id, plan_id)
+        if plan.status != PlanStatus.ARCHIVED:
+            plan.status = PlanStatus.ARCHIVED
+            plan.archived_at = datetime.now(UTC)
+            try:
+                self.db.commit()
+                self.db.refresh(plan)
+            except Exception:
+                self.db.rollback()
+                raise
+        return PlanResponse.model_validate(plan)
 
     def _get_project(self, project_id: UUID) -> Project:
         project = self.db.get(Project, project_id)
         if project is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
         return project
+
+    def _get_plan(self, project_id: UUID, plan_id: UUID) -> Plan:
+        self._get_project(project_id)
+        statement = select(Plan).where(Plan.id == plan_id, Plan.project_id == project_id)
+        plan = self.db.scalar(statement)
+        if plan is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Plan not found")
+        return plan
 
     def _is_duplicate(self, project_id: UUID, checksum: str) -> bool:
         statement = select(Plan.id).where(

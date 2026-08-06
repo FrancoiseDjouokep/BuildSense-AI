@@ -15,6 +15,7 @@ class PlanStatus(str, Enum):
     PROCESSING = "processing"
     ANALYSED = "analysed"
     FAILED = "failed"
+    ARCHIVED = "archived"
 
 
 class Plan(Base):
@@ -60,10 +61,14 @@ class Plan(Base):
     )
 
     status: Mapped[PlanStatus] = mapped_column(
-        SQLEnum(PlanStatus, name="plan_status"),
-        default=PlanStatus.UPLOADED,
-        nullable=False,
-    )
+    SQLEnum(
+        PlanStatus,
+        name="plan_status",
+        values_callable=lambda enum: [member.value for member in enum],
+    ),
+    default=PlanStatus.UPLOADED,
+    nullable=False,
+   )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -76,4 +81,9 @@ class Plan(Base):
         server_default=func.now(),
         onupdate=func.now(),
         nullable=False,
+    )
+
+    archived_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
     )

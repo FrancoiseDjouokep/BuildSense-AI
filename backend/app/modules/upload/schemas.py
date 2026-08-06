@@ -15,6 +15,7 @@ class PlanResponse(BaseModel):
     checksum: str
     status: PlanStatus
     created_at: datetime
+    archived_at: datetime | None
 
     model_config = ConfigDict(from_attributes=True)
 

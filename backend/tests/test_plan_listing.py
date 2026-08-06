@@ -21,6 +21,7 @@ def make_plan(project_id: object, filename: str) -> Plan:
         checksum="a" * 64,
         status=PlanStatus.UPLOADED,
         created_at=datetime.now(UTC),
+        archived_at=None,
     )
 
 
@@ -49,3 +50,19 @@ def test_rejects_listing_for_unknown_project() -> None:
 
     with pytest.raises(HTTPException, match="Project not found"):
         service.list_plans(uuid4())
+
+
+def test_archives_plan_without_removing_its_record() -> None:
+    project = Project(id=uuid4(), name="Maison témoin")
+    plan = make_plan(project.id, "ground-floor.pdf")
+    db = MagicMock()
+    db.get.return_value = project
+    db.scalar.return_value = plan
+    service = UploadService(db=db, storage=MagicMock())
+
+    result = service.archive_plan(project.id, plan.id)
+
+    assert result.status == PlanStatus.ARCHIVED
+    assert result.archived_at is not None
+    db.commit.assert_called_once()
+    db.refresh.assert_called_once_with(plan)
