@@ -9,7 +9,7 @@ PositiveDecimal = Annotated[Decimal, Field(gt=0)]
 
 
 class BuildingObservation(BaseModel):
-    scale: str = Field(pattern=r"^1:\d+$", examples=["1:100"])
+    scale: str = Field(pattern=r"^1:\d+$")
     floors: int = Field(ge=1, le=200)
 
 
