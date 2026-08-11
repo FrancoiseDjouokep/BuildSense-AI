@@ -7,7 +7,6 @@ from app.core.config.settings import settings
 from app.modules.plan_analysis.contracts import PlanExtraction
 from app.modules.plan_analysis.prompting import build_plan_extraction_prompt
 
-
 GEMINI_RESPONSE_SCHEMA = {
     "type": "object",
     "properties": {
@@ -158,4 +157,7 @@ class GeminiPlanInterpreter:
                 "Gemini returned invalid JSON."
             ) from error
 
+        # Provider metadata is application-controlled, never trusted from the LLM.
+        payload["source_provider"] = "gemini"
+        payload["source_model"] = self.model
         return PlanExtraction.model_validate(payload)

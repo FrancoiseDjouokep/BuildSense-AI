@@ -4,7 +4,7 @@ from app.core.config.settings import settings
 
 
 class ObjectStorageError(Exception):
-    """Raised when the object store cannot safely handle an upload."""
+    """Raised when the object store cannot safely handle an operation."""
 
 
 class ObjectStorageConfigurationError(ObjectStorageError):
@@ -12,9 +12,15 @@ class ObjectStorageConfigurationError(ObjectStorageError):
 
 
 class PlanStorage(Protocol):
-    def put(self, key: str, content: BinaryIO, size: int, mime_type: str) -> None: ...
+    def put(
+        self,
+        key: str,
+        content: BinaryIO,
+        size: int,
+        mime_type: str,
+    ) -> None: ...
 
-    def get(self, key: str) -> tuple[bytes, str]: ...
+    def get(self, key: str) -> bytes: ...
 
     def delete(self, key: str) -> None: ...
 
@@ -61,26 +67,24 @@ class MinioPlanStorage:
                 ContentLength=size,
                 ContentType=mime_type,
             )
-
         except self.client_error_type as error:
             raise ObjectStorageConfigurationError(
                 "Unable to store the plan in object storage."
             ) from error
 
-    def get(self, key: str) -> tuple[bytes, str]:
+    def get(self, key: str) -> bytes:
         try:
             response = self.client.get_object(
                 Bucket=self.bucket,
                 Key=key,
             )
 
-            content = response["Body"].read()
-            content_type = response.get(
-                "ContentType",
-                "application/octet-stream",
-            )
+            body = response["Body"]
 
-            return content, content_type
+            try:
+                return body.read()
+            finally:
+                body.close()
 
         except self.client_error_type as error:
             raise ObjectStorageError(
@@ -93,7 +97,6 @@ class MinioPlanStorage:
                 Bucket=self.bucket,
                 Key=key,
             )
-
         except self.client_error_type as error:
             raise ObjectStorageError(
                 "Unable to remove a stored plan."
@@ -101,9 +104,7 @@ class MinioPlanStorage:
 
     def _ensure_bucket(self) -> None:
         try:
-            self.client.head_bucket(
-                Bucket=self.bucket,
-            )
+            self.client.head_bucket(Bucket=self.bucket)
 
         except self.client_error_type as error:
             code = error.response.get("Error", {}).get("Code")
@@ -115,10 +116,7 @@ class MinioPlanStorage:
                 ) from error
 
             try:
-                self.client.create_bucket(
-                    Bucket=self.bucket,
-                )
-
+                self.client.create_bucket(Bucket=self.bucket)
             except self.client_error_type as create_error:
                 raise ObjectStorageConfigurationError(
                     "Unable to create the plan storage bucket."

@@ -4,6 +4,8 @@ import json
 
 from app.modules.plan_analysis.contracts import PlanExtraction
 
+PLAN_EXTRACTION_PROMPT_VERSION = "v1"
+
 
 def build_plan_extraction_prompt() -> str:
     """Return a provider-neutral instruction that asks for observations, never maths."""
