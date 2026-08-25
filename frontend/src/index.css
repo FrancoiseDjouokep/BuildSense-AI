@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #14211B;
+  --color-forest: #1F5C42;
+  --color-forest-deep: #163B2C;
+  --color-forest-light: #2D7A56;
+  --color-mint: #4F9C6C;
+  --color-paper: #F4F6F2;
+  --color-line: #D9E0D9;
+  --color-amber: #B8790C;
+  --color-brick: #A8402A;
+
+  --font-display: "Space Grotesk", sans-serif;
+  --font-sans: "IBM Plex Sans", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+}
+
+:root {
+  --line: #D9E0D9;
+}
+
+html, body, #root { height: 100%; }
+
+body {
+  @apply bg-paper text-ink font-sans antialiased;
+}
+
+.bg-blueprint-grid {
+  background-image:
+    linear-gradient(to right, var(--line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--line) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+:focus-visible {
+  outline: 2px solid #1F5C42;
+  outline-offset: 2px;
+}
